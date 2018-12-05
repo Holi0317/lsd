@@ -16,10 +16,13 @@ jobs:
     - stage: "Github release"
       script: 
        - "cargo build --release"
-       - "cp target/release/lsd target/lsd-$(rustup show toolchain)"
+       - "cp target/release/lsd target/lsd-$(rustup show active-toolchain)"
       if: "tag IS present"
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
         file: "target/lsd-*"
         file_glob: true
+        # This may seem redundant. But this is necessary. See travis-ci/travis-ci#8289
+        on:
+          tags: true
