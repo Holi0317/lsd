@@ -1,9 +1,59 @@
 language: rust
-rust:
-  - stable
+
+rust: 
+ - stable
+ - nightly
+ - beta
+
+env:
+  # gnu toolchain must be the first
+  - TOOLCHAIN=x86_64-unknown-linux-gnu
+  - TOOLCHAIN=x86_64-unknown-linux-musl
+
 matrix:
   allow_failures:
-    - rust:
-      - nightly
-      - beta
-script: cargo build
+    - nightly
+    - beta
+  fast_finish: true
+
+stages:
+  - test
+  - rustfmt
+  - name: release
+    if: "tag IS present AND env(TRAVIS_RUST_VERSION) = stable"
+
+before_script:
+  - "rustup default ${TRAVIS_RUST_VERSION}-${TOOLCHAIN}"
+
+script: "cargo test"
+
+jobs:
+  include:
+    - stage: "rustfmt"
+      rust: "stable"
+      # Remove the line below for enforcing rustfmt
+      allow_failures: true
+      toolchain: "x86_64-unknown-linux-gnu"
+      script:
+       - "rustup component add rustfmt-preview"
+       - "cargo fmt --all -- --check"
+
+    - stage: "release"
+      script: 
+       - "cargo build --release"
+       - "cd target/release && zip lsd-$(rustup show active-toolchain).zip lsd && cd ../.."
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        skip_cleanup: true
+        file: "target/release/lsd-*.zip"
+        file_glob: true
+        on:
+          tags: true
+    # Uncomment the block below for release to cargo
+    #- script: skip
+      #deploy:
+        #provider: cargo
+        #token: $CARGO_TOKEN
+        #on:
+          #tags: true
