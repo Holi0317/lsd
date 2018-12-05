@@ -21,6 +21,7 @@ jobs:
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
+        skip_cleanup: true
         file: "target/lsd-*"
         file_glob: true
         # This may seem redundant. But this is necessary. See travis-ci/travis-ci#8289
