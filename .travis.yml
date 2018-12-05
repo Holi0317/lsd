@@ -1,14 +1,25 @@
 language: rust
 
-rust:
-  - stable
-  - nightly
-  - beta
-
-matrix:
-  allow_failures:
-    - rust:
-      - nightly
-      - beta
+rust: stable
 
 script: cargo build
+
+jobs:
+  include:
+    - stage: "test"
+      script: "cargo test"
+    - rust: "nightly"
+      allow_failures: true
+    - rust: "beta"
+      allow_failures: true
+
+    - stage: "Github release"
+      script: 
+       - "cargo build --release"
+       - "cp target/release/lsd target/lsd-$(rustup show toolchain)"
+      if: "tag IS present"
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: "target/lsd-*"
+        file_glob: true
